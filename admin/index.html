@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة تحكم المقهى</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container" id="app">
+        <div class="header">
+            <h1>لوحة تحكم المقهى</h1>
+            <div class="tabs">
+                <button @click="activeTab = 'orders'" :class="{active: activeTab === 'orders'}">الطلبات</button>
+                <button @click="activeTab = 'menu'" :class="{active: activeTab === 'menu'}">إدارة القائمة</button>
+                <button @click="activeTab = 'stats'" :class="{active: activeTab === 'stats'}">الإحصائيات</button>
+            </div>
+        </div>
+
+        <!-- قسم الطلبات -->
+        <div v-if="activeTab === 'orders'" class="orders-section">
+            <div class="order-filters">
+                <select v-model="orderFilter">
+                    <option value="all">جميع الطلبات</option>
+                    <option value="new">جديدة</option>
+                    <option value="preparing">قيد التحضير</option>
+                    <option value="ready">جاهزة</option>
+                </select>
+                <button @click="refreshOrders">تحديث</button>
+            </div>
+
+            <div class="orders-list">
+                <div v-for="order in filteredOrders" class="order-card">
+                    <div class="order-header">
+                        <h3>الطاولة: {{order.tableNumber}}</h3>
+                        <span class="order-time">{{formatTime(order.createdAt)}}</span>
+                        <select v-model="order.status" @change="updateOrderStatus(order)">
+                            <option value="new">جديدة</option>
+                            <option value="preparing">قيد التحضير</option>
+                            <option value="ready">جاهزة</option>
+                            <option value="completed">مكتملة</option>
+                        </select>
+                    </div>
+                    
+                    <div class="order-items">
+                        <div v-for="item in order.items" class="order-item">
+                            <span>{{getProductName(item.productId)}} x{{item.quantity}}</span>
+                            <span>{{getProductPrice(item.productId) * item.quantity}} ريال</span>
+                            <p v-if="item.notes">ملاحظات: {{item.notes}}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="order-total">
+                        <strong>المجموع: {{calculateOrderTotal(order)}} ريال</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- قسم إدارة القائمة -->
+        <div v-if="activeTab === 'menu'" class="menu-management">
+            <div class="add-product-form">
+                <h2>إضافة منتج جديد</h2>
+                <div class="form-group">
+                    <label>اسم المنتج:</label>
+                    <input v-model="newProduct.name" type="text">
+                </div>
+                <div class="form-group">
+                    <label>السعر:</label>
+                    <input v-model="newProduct.price" type="number">
+                </div>
+                <div class="form-group">
+                    <label>الفئة:</label>
+                    <input v-model="newProduct.category" type="text">
+                </div>
+                <div class="form-group">
+                    <label>صورة المنتج (رابط):</label>
+                    <input v-model="newProduct.image" type="text">
+                </div>
+                <button @click="addProduct">إضافة منتج</button>
+            </div>
+
+            <div class="products-list">
+                <h2>المنتجات الحالية</h2>
+                <div v-for="product in products" class="product-item">
+                    <img :src="product.image" :alt="product.name">
+                    <div class="product-details">
+                        <h3>{{product.name}}</h3>
+                        <p>السعر: {{product.price}} ريال</p>
+                        <p>الفئة: {{product.category}}</p>
+                    </div>
+                    <div class="product-actions">
+                        <button @click="editProduct(product)">تعديل</button>
+                        <button @click="deleteProduct(product.id)">حذف</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- قسم الإحصائيات -->
+        <div v-if="activeTab === 'stats'" class="statistics">
+            <h2>إحصائيات المبيعات</h2>
+            <div class="stats-cards">
+                <div class="stat-card">
+                    <h3>إجمالي المبيعات اليوم</h3>
+                    <p>{{dailySales}} ريال</p>
+                </div>
+                <div class="stat-card">
+                    <h3>عدد الطلبات اليوم</h3>
+                    <p>{{dailyOrders}}</p>
+                </div>
+                <div class="stat-card">
+                    <h3>المنتجات الأكثر طلباً</h3>
+                    <ul>
+                        <li v-for="item in topProducts">{{item.name}} ({{item.orders}} طلب)</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
+    <script src="admin.js"></script>
+</body>
+</html>
